@@ -3,12 +3,17 @@ import sistemaventas.util.ConnectionUtil;
 import sistemaventas.dto.ClienteDTO;
 import sistemaventas.dto.InventarioDTO;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Scanner;
+import sistemaventas.dto.DetalleVentaDTO;
+import sistemaventas.dto.VentaDTO;
 import sistemaventas.service.interfaces.IClienteService;
 import sistemaventas.service.interfaces.IInventarioService;
 import sistemaventas.service.impl.ClienteServiceImpl;
 import sistemaventas.service.impl.InventarioServiceImpl;
+import sistemaventas.service.impl.VentaServiceImpl;
+import sistemaventas.service.interfaces.IVentaService;
 
 /**
  * Clase principal del Sistema de Gestión de Ventas
@@ -22,6 +27,8 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final IClienteService clienteService = new ClienteServiceImpl();
     private static final IInventarioService inventarioService = new InventarioServiceImpl();
+    private static final IVentaService ventaService = new VentaServiceImpl();
+
     
     public static void main(String[] args) {
         System.out.println("===========================================");
@@ -490,12 +497,417 @@ public class Main {
     }
     
     private static void menuVentas() {
+    int opcion;
+    
+    do {
         System.out.println("\n===========================================");
         System.out.println("            GESTIÓN DE VENTAS");
         System.out.println("===========================================");
-        System.out.println("⚠️  Módulo en desarrollo...");
-        System.out.println("Próximamente: Registro y gestión de ventas");
+        System.out.println("1. Nueva Venta");
+        System.out.println("2. Ver Venta por ID");
+        System.out.println("3. Listar Ventas del Día");
+        System.out.println("4. Listar Todas las Ventas");
+        System.out.println("5. Buscar Ventas por Cliente");
+        System.out.println("6. Completar Venta");
+        System.out.println("7. Cancelar Venta");
+        System.out.println("8. Ver Detalle de Venta");
+        System.out.println("0. Volver al Menú Principal");
+        System.out.println("===========================================");
+        System.out.print("Seleccione una opción: ");
+        
+        opcion = leerEntero();
+        
+        switch (opcion) {
+            case 1:
+                nuevaVenta();
+                break;
+            case 2:
+                buscarVentaPorId();
+                break;
+            case 3:
+                listarVentasDelDia();
+                break;
+            case 4:
+                listarTodasLasVentas();
+                break;
+            case 5:
+                buscarVentasPorCliente();
+                break;
+            case 6:
+                completarVenta();
+                break;
+            case 7:
+                cancelarVenta();
+                break;
+            case 8:
+                verDetalleVenta();
+                break;
+            case 0:
+                System.out.println("Volviendo al menú principal...");
+                break;
+            default:
+                System.out.println("Opción inválida. Intente nuevamente.");
+                break;
+        }
+    } while (opcion != 0);
+}
+
+private static void nuevaVenta() {
+    try {
+        System.out.println("\n--- NUEVA VENTA ---");
+        
+        // Buscar cliente
+        System.out.print("Ingrese el ID del cliente: ");
+        int idCliente = leerEntero();
+        
+        ClienteDTO cliente = clienteService.obtenerClientePorId(idCliente);
+        System.out.println("Cliente: " + cliente.getNombre());
+        
+        // Crear nueva venta
+        VentaDTO ventaDTO = new VentaDTO(idCliente, LocalDate.now());
+        VentaDTO ventaCreada = ventaService.crearVenta(ventaDTO);
+        
+        System.out.println("\n✓ Venta creada con ID: " + ventaCreada.getIdVentas());
+        System.out.println("Estado: " + ventaCreada.getEstadoDescripcion());
+        
+        // Agregar productos
+        agregarProductosAVenta(ventaCreada.getIdVentas());
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error al crear venta: " + e.getMessage());
     }
+}
+
+private static void agregarProductosAVenta(int idVenta) {
+    String continuar="N";
+    BigDecimal totalAcumulado = BigDecimal.ZERO;
+    
+    do {
+        try {
+            System.out.println("\n--- AGREGAR PRODUCTO A LA VENTA ---");
+            
+            // Mostrar inventario disponible
+            System.out.println("\nProductos disponibles:");
+            List<InventarioDTO> inventarios = inventarioService.listarInventarios();
+            
+            System.out.printf("%-5s %-25s %-20s %-10s %-10s%n", 
+                "ID", "PRODUCTO", "ALMACÉN", "STOCK", "PRECIO");
+            System.out.println(repetirCaracter("=", 75));
+            
+            for (InventarioDTO inv : inventarios) {
+                if (inv.getCantidad() > 0) {
+                    System.out.printf("%-5d %-25s %-20s %-10d S/ %-8.2f%n",
+                        inv.getIdInventario(),
+                        inv.getNombreProducto().length() > 24 ? 
+                            inv.getNombreProducto().substring(0, 21) + "..." : 
+                            inv.getNombreProducto(),
+                        inv.getDescripcionAlmacen().length() > 19 ? 
+                            inv.getDescripcionAlmacen().substring(0, 16) + "..." : 
+                            inv.getDescripcionAlmacen(),
+                        inv.getCantidad(),
+                        inv.getPrecioProducto()
+                    );
+                }
+            }
+            
+            System.out.print("\nIngrese el ID del inventario: ");
+            int idInventario = leerEntero();
+            
+            InventarioDTO inventario = inventarioService.obtenerInventarioPorId(idInventario);
+            System.out.println("Producto seleccionado: " + inventario.getNombreProducto());
+            System.out.println("Stock disponible: " + inventario.getCantidad());
+            System.out.println("Precio unitario: S/ " + inventario.getPrecioProducto());
+            
+            System.out.print("Cantidad a vender: ");
+            int cantidad = leerEntero();
+            
+            if (cantidad > inventario.getCantidad()) {
+                System.out.println("✗ No hay suficiente stock disponible");
+                continue;
+            }
+            
+            // Crear detalle de venta
+            DetalleVentaDTO detalleDTO = new DetalleVentaDTO(
+                idVenta, 
+                idInventario, 
+                cantidad, 
+                inventario.getPrecioProducto()
+            );
+            
+            DetalleVentaDTO detalleCreado = ventaService.agregarDetalleVenta(idVenta,detalleDTO);
+            
+            // Actualizar stock
+            inventarioService.disminuirStock(idInventario, cantidad);
+            
+            totalAcumulado = totalAcumulado.add(detalleCreado.getPreciototal());
+            
+            System.out.println("\n✓ Producto agregado exitosamente");
+            System.out.println("Subtotal del producto: S/ " + detalleCreado.getPreciototal());
+            System.out.println("Total acumulado: S/ " + totalAcumulado);
+            
+            System.out.print("\n¿Agregar otro producto? (S/N): ");
+            continuar = scanner.nextLine();
+            
+        } catch (Exception e) {
+            System.err.println("✗ Error al agregar producto: " + e.getMessage());
+            continuar = "N";
+        }
+    } while (continuar.equalsIgnoreCase("S") || continuar.equalsIgnoreCase("SI"));
+    
+    System.out.println("\n===========================================");
+    System.out.println("TOTAL DE LA VENTA: S/ " + totalAcumulado);
+    System.out.println("===========================================");
+}
+
+private static void buscarVentaPorId() {
+    try {
+        System.out.println("\n--- BUSCAR VENTA POR ID ---");
+        System.out.print("Ingrese el ID de la venta: ");
+        int id = leerEntero();
+        
+        VentaDTO venta = ventaService.obtenerVentaPorId(id);
+        mostrarVenta(venta);
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error: " + e.getMessage());
+    }
+}
+
+private static void listarVentasDelDia() {
+    try {
+        System.out.println("\n--- VENTAS DEL DÍA ---");
+        LocalDate hoy = LocalDate.now();
+        List<VentaDTO> ventas = ventaService.obtenerVentasHoy();
+        
+        if (ventas.isEmpty()) {
+            System.out.println("No hay ventas registradas el día de hoy.");
+            return;
+        }
+        
+        mostrarTablaVentas(ventas);
+        mostrarResumenVentas(ventas);
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error al listar ventas: " + e.getMessage());
+    }
+}
+
+private static void listarTodasLasVentas() {
+    try {
+        System.out.println("\n--- TODAS LAS VENTAS ---");
+        List<VentaDTO> ventas = ventaService.listarVentas();
+        
+        if (ventas.isEmpty()) {
+            System.out.println("No hay ventas registradas.");
+            return;
+        }
+        
+        mostrarTablaVentas(ventas);
+        mostrarResumenVentas(ventas);
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error al listar ventas: " + e.getMessage());
+    }
+}
+
+private static void buscarVentasPorCliente() {
+    try {
+        System.out.println("\n--- BUSCAR VENTAS POR CLIENTE ---");
+        System.out.print("Ingrese el ID del cliente: ");
+        int idCliente = leerEntero();
+        
+        ClienteDTO cliente = clienteService.obtenerClientePorId(idCliente);
+        System.out.println("\nCliente: " + cliente.getNombre());
+        
+        List<VentaDTO> ventas = ventaService.buscarVentasPorCliente(idCliente);
+        
+        if (ventas.isEmpty()) {
+            System.out.println("Este cliente no tiene ventas registradas.");
+            return;
+        }
+        
+        mostrarTablaVentas(ventas);
+        mostrarResumenVentas(ventas);
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error: " + e.getMessage());
+    }
+}
+
+private static void completarVenta() {
+    try {
+        System.out.println("\n--- COMPLETAR VENTA ---");
+        System.out.print("Ingrese el ID de la venta: ");
+        int id = leerEntero();
+        
+        VentaDTO venta = ventaService.obtenerVentaPorId(id);
+        
+        if (!venta.isPendiente()) {
+            System.out.println("✗ Esta venta no puede ser completada. Estado actual: " + venta.getEstadoDescripcion());
+            return;
+        }
+        
+        mostrarVenta(venta);
+        
+        System.out.print("\n¿Confirmar que la venta ha sido completada? (S/N): ");
+        String confirmacion = scanner.nextLine();
+        
+        if (confirmacion.equalsIgnoreCase("S") || confirmacion.equalsIgnoreCase("SI")) {
+            ventaService.completarVenta(id);
+            System.out.println("✓ Venta completada exitosamente");
+        } else {
+            System.out.println("Operación cancelada");
+        }
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error al completar venta: " + e.getMessage());
+    }
+}
+
+private static void cancelarVenta() {
+    try {
+        System.out.println("\n--- CANCELAR VENTA ---");
+        System.out.print("Ingrese el ID de la venta: ");
+        int id = leerEntero();
+        
+        VentaDTO venta = ventaService.obtenerVentaPorId(id);
+        
+        if (!venta.isPendiente()) {
+            System.out.println("✗ Esta venta no puede ser cancelada. Estado actual: " + venta.getEstadoDescripcion());
+            return;
+        }
+        
+        mostrarVenta(venta);
+        
+        System.out.print("\n¿Está seguro de cancelar esta venta? (S/N): ");
+        String confirmacion = scanner.nextLine();
+        
+        if (confirmacion.equalsIgnoreCase("S") || confirmacion.equalsIgnoreCase("SI")) {
+            // Restaurar stock
+            List<DetalleVentaDTO> detalles = venta.getDetalles();
+            if (detalles != null) {
+                for (DetalleVentaDTO detalle : detalles) {
+                    inventarioService.aumentarStock(detalle.getIdInventario(), detalle.getCantidad());
+                }
+            }
+            
+            ventaService.cancelarVenta(id);
+            System.out.println("✓ Venta cancelada exitosamente");
+            System.out.println("✓ Stock restaurado");
+        } else {
+            System.out.println("Operación cancelada");
+        }
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error al cancelar venta: " + e.getMessage());
+    }
+}
+
+private static void verDetalleVenta() {
+    try {
+        System.out.println("\n--- VER DETALLE DE VENTA ---");
+        System.out.print("Ingrese el ID de la venta: ");
+        int id = leerEntero();
+        
+        VentaDTO venta = ventaService.obtenerVentaPorId(id);
+        mostrarVentaCompleta(venta);
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error: " + e.getMessage());
+    }
+}
+
+// Métodos auxiliares para mostrar información de ventas
+
+private static void mostrarVenta(VentaDTO venta) {
+    System.out.println("\n--- INFORMACIÓN DE LA VENTA ---");
+    System.out.println("ID Venta: " + venta.getIdVentas());
+    System.out.println("Fecha: " + venta.getFecha().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+    System.out.println("Cliente: " + venta.getNombreCliente());
+    System.out.println("Documento: " + venta.getDocumentoCliente());
+    System.out.println("Total: " + venta.getTotalFormateado());
+    System.out.println("Estado: " + venta.getEstadoDescripcion());
+    if (venta.getTotalItems() != null) {
+        System.out.println("Total Items: " + venta.getTotalItems());
+        System.out.println("Total Cantidad: " + venta.getTotalCantidad());
+    }
+}
+
+private static void mostrarVentaCompleta(VentaDTO venta) {
+    mostrarVenta(venta);
+    
+    if (venta.getDetalles() != null && !venta.getDetalles().isEmpty()) {
+        System.out.println("\n--- DETALLE DE PRODUCTOS ---");
+        System.out.printf("%-5s %-25s %-15s %-10s %-12s %-12s%n", 
+            "ITEM", "PRODUCTO", "ALMACÉN", "CANTIDAD", "P.UNIT", "SUBTOTAL");
+        System.out.println(repetirCaracter("=", 85));
+        
+        int item = 1;
+        for (DetalleVentaDTO detalle : venta.getDetalles()) {
+            System.out.printf("%-5d %-25s %-15s %-10d %-12s %-12s%n",
+                item++,
+                detalle.getNombreProducto() != null ?
+                    (detalle.getNombreProducto().length() > 24 ? 
+                        detalle.getNombreProducto().substring(0, 21) + "..." : 
+                        detalle.getNombreProducto()) : "N/A",
+                detalle.getDescripcionAlmacen() != null ?
+                    (detalle.getDescripcionAlmacen().length() > 14 ? 
+                        detalle.getDescripcionAlmacen().substring(0, 11) + "..." : 
+                        detalle.getDescripcionAlmacen()) : "N/A",
+                detalle.getCantidad(),
+                detalle.getPrecioUnitarioFormateado(),
+                detalle.getPreciototalFormateado()
+            );
+        }
+        
+        System.out.println(repetirCaracter("-", 85));
+        System.out.printf("%64s %-12s%n", "TOTAL:", venta.getTotalFormateado());
+    }
+}
+
+private static void mostrarTablaVentas(List<VentaDTO> ventas) {
+    System.out.printf("%-8s %-12s %-25s %-15s %-12s %-12s%n", 
+        "ID", "FECHA", "CLIENTE", "DOCUMENTO", "TOTAL", "ESTADO");
+    System.out.println(repetirCaracter("=", 90));
+    
+    for (VentaDTO venta : ventas) {
+        System.out.printf("%-8d %-12s %-25s %-15s %-12s %-12s%n",
+            venta.getIdVentas(),
+            venta.getFecha().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+            venta.getNombreCliente() != null ?
+                (venta.getNombreCliente().length() > 24 ? 
+                    venta.getNombreCliente().substring(0, 21) + "..." : 
+                    venta.getNombreCliente()) : "N/A",
+            venta.getDocumentoCliente() != null ? venta.getDocumentoCliente() : "N/A",
+            venta.getTotalFormateado(),
+            venta.getEstadoDescripcion()
+        );
+    }
+}
+
+private static void mostrarResumenVentas(List<VentaDTO> ventas) {
+    // Calcular resumen
+    long ventasPendientes = 0;
+    long ventasCompletadas = 0;
+    long ventasCanceladas = 0;
+    BigDecimal totalCompletadas = BigDecimal.ZERO;
+    
+    for (VentaDTO venta : ventas) {
+        if (venta.isPendiente()) ventasPendientes++;
+        else if (venta.isCompletada()) {
+            ventasCompletadas++;
+            totalCompletadas = totalCompletadas.add(venta.getTotal());
+        }
+        else if (venta.isCancelada()) ventasCanceladas++;
+    }
+    
+    System.out.println("\n--- RESUMEN ---");
+    System.out.println("Total de ventas: " + ventas.size());
+    System.out.println("• Pendientes: " + ventasPendientes);
+    System.out.println("• Completadas: " + ventasCompletadas);
+    System.out.println("• Canceladas: " + ventasCanceladas);
+    System.out.println("Total en ventas completadas: S/ " + totalCompletadas);
+}
     
     private static void menuReportes() {
         System.out.println("\n===========================================");
