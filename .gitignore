@@ -1,0 +1,50 @@
+# === Archivos de compilación ===
+*.class
+
+# === Directorios comunes de compilación ===
+bin/
+build/
+out/
+target/
+
+# === Archivos de Log ===
+*.log
+
+# === Archivos temporales del sistema operativo ===
+*.swp
+.DS_Store
+Thumbs.db
+
+# === Configuración de IDEs ===
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# VS Code
+.vscode/
+
+# === Archivos generados por el sistema ===
+*.bak
+*.tmp
+
+# === Librerías externas si no usas Maven/Gradle ===
+lib/
+
+# === Otros archivos de entorno local ===
+.env
