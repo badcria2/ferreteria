@@ -1,0 +1,121 @@
+
+# 📁 Estructura Simple del Proyecto Java 1.8
+
+```
+sistema-ventas/
+├── 📄 pom.xml                                    # Configuración Maven
+└── src/
+    └── main/
+        └── java/
+            └── com/
+                └── sistemaventas/
+                    ├── 📁 config/                # Configuración
+                    │   └── 📄 DatabaseConfig.java
+                    │
+                    ├── 📁 entity/                # Entidades (Business Entity)
+                    │   ├── 📄 Cliente.java
+                    │   ├── 📄 Producto.java
+                    │   ├── 📄 Almacen.java
+                    │   ├── 📄 Inventario.java
+                    │   ├── 📄 Venta.java
+                    │   └── 📄 DetalleVenta.java
+                    │
+                    ├── 📁 dao/                   # Data Access Objects
+                    │   ├── 📁 base/
+                    │   │   └── 📄 IBaseDAO.java
+                    │   ├── 📁 interfaces/
+                    │   │   ├── 📄 IClienteDAO.java
+                    │   │   ├── 📄 IProductoDAO.java
+                    │   │   ├── 📄 IAlmacenDAO.java
+                    │   │   ├── 📄 IInventarioDAO.java
+                    │   │   ├── 📄 IVentaDAO.java
+                    │   │   └── 📄 IDetalleVentaDAO.java
+                    │   └── 📁 impl/
+                    │       ├── 📄 ClienteDAOImpl.java
+                    │       ├── 📄 ProductoDAOImpl.java
+                    │       ├── 📄 AlmacenDAOImpl.java
+                    │       ├── 📄 InventarioDAOImpl.java
+                    │       ├── 📄 VentaDAOImpl.java
+                    │       └── 📄 DetalleVentaDAOImpl.java
+                    │
+                    ├── 📁 service/               # Lógica de negocio
+                    │   ├── 📁 interfaces/
+                    │   │   ├── 📄 IClienteService.java
+                    │   │   ├── 📄 IProductoService.java
+                    │   │   ├── 📄 IInventarioService.java
+                    │   │   └── 📄 IVentaService.java
+                    │   └── 📁 impl/
+                    │       ├── 📄 ClienteServiceImpl.java
+                    │       ├── 📄 ProductoServiceImpl.java
+                    │       ├── 📄 InventarioServiceImpl.java
+                    │       └── 📄 VentaServiceImpl.java
+                    │
+                    ├── 📁 dto/                   # Data Transfer Objects
+                    │   ├── 📄 ClienteDTO.java
+                    │   ├── 📄 ProductoDTO.java
+                    │   ├── 📄 InventarioDTO.java
+                    │   └── 📄 VentaDTO.java
+                    │
+                    ├── 📁 exception/             # Excepciones personalizadas
+                    │   ├── 📄 BusinessException.java
+                    │   ├── 📄 DataAccessException.java
+                    │   └── 📄 ValidationException.java
+                    │
+                    ├── 📁 util/                  # Utilidades
+                    │   ├── 📄 ConnectionUtil.java
+                    │   ├── 📄 ValidationUtil.java
+                    │   └── 📄 DateUtil.java
+                    │
+                    └── 📁 main/                  # Aplicación principal
+                        └── 📄 Main.java
+```
+
+## 📋 **Descripción de Cada Paquete:**
+
+### 🏗️ **Paquetes Principales:**
+
+- **📁 config/**: Configuración de base de datos
+- **📁 entity/**: Entidades de negocio (Business Entity como pide el requisito)
+- **📁 dao/**: Data Access Objects con métodos CRUD
+- **📁 service/**: Lógica de negocio y validaciones
+- **📁 dto/**: Objetos de transferencia de datos
+- **📁 exception/**: Excepciones personalizadas
+- **📁 util/**: Utilidades del sistema
+- **📁 main/**: Punto de entrada con menú de consola
+
+## 🎯 **Archivos Principales:**
+
+### ✅ **Configuración:**
+- `DatabaseConfig.java` - Configuración de conexión a MySQL
+
+### ✅ **Entidades (Business Entity):**
+- `Cliente.java` - Entidad cliente
+- `Producto.java` - Entidad producto  
+- `Almacen.java` - Entidad almacén
+- `Inventario.java` - Entidad inventario (relación N:N)
+- `Venta.java` - Entidad venta
+- `DetalleVenta.java` - Entidad detalle de venta
+
+### ✅ **DAO (Data Access Object):**
+- `IBaseDAO.java` - Interfaz base con métodos CRUD
+- Interfaces específicas para cada entidad
+- Implementaciones con todos los métodos CRUD
+
+### ✅ **Servicios:**
+- Interfaces de servicios para lógica de negocio
+- Implementaciones con validaciones
+
+### ✅ **Utilidades:**
+- `ConnectionUtil.java` - Pool de conexiones
+- `ValidationUtil.java` - Validaciones
+- `DateUtil.java` - Manejo de fechas
+
+### ✅ **Aplicación:**
+- `Main.java` - Menú interactivo de consola
+
+## 🚀 **Comando para Crear la Estructura:**
+
+```bash
+mkdir -p sistema-ventas/src/main/java/com/sistemaventas/{config,entity,dao/{base,interfaces,impl},service/{interfaces,impl},dto,exception,util,main}
+```
+ 
