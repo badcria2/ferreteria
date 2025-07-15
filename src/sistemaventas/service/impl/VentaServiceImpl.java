@@ -427,12 +427,28 @@ public class VentaServiceImpl implements IVentaService {
     }
     
     private VentaDTO convertirEntityADTO(Venta entity) {
+        String nombre = "";
+        String dni = "";
+        String correo = "";
+        
+        if(entity.getCliente()!=null){
+            if(entity.getCliente().getNombre()!=null)
+                nombre = entity.getCliente().getNombre();
+            if(entity.getCliente().getNroDocumento() != null)
+                dni = entity.getCliente().getNroDocumento();
+            if(entity.getCliente().getCorreo()!=null)
+                correo = entity.getCliente().getCorreo();
+        }
+        
         VentaDTO dto = new VentaDTO();
         dto.setIdVentas(entity.getIdVentas());
         dto.setFecha(entity.getFecha());
         dto.setIdCliente(entity.getIdCliente());
         dto.setTotal(entity.getTotal());
         dto.setEstado(entity.getEstado().name());
+        dto.setCorreoCliente(correo);
+        dto.setDocumentoCliente(dni);
+        dto.setNombreCliente(nombre);
         dto.setFechaRegistro(entity.getFechaRegistro());
         return dto;
     }

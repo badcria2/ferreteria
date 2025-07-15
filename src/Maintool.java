@@ -5,6 +5,9 @@ import sistemaventas.dto.InventarioDTO;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import sistemaventas.dto.DetalleVentaDTO;
 import sistemaventas.dto.VentaDTO;
@@ -22,7 +25,7 @@ import sistemaventas.service.interfaces.IVentaService;
  * @author Sistema de Ventas
  * @version 1.0
  */
-public class Main {
+public class Maintool {
     
     private static final Scanner scanner = new Scanner(System.in);
     private static final IClienteService clienteService = new ClienteServiceImpl();
@@ -910,13 +913,267 @@ private static void mostrarResumenVentas(List<VentaDTO> ventas) {
 }
     
     private static void menuReportes() {
+    int opcion;
+    
+    do {
         System.out.println("\n===========================================");
         System.out.println("                REPORTES");
         System.out.println("===========================================");
-        System.out.println("⚠️  Módulo en desarrollo...");
-        System.out.println("Próximamente: Reportes de ventas, inventario y clientes");
+        System.out.println("1. Reporte de Ventas por Período");
+        System.out.println("2. Productos Más Vendidos");
+        System.out.println("3. Clientes Frecuentes");
+        System.out.println("4. Inventario Valorizado");
+        System.out.println("5. Productos con Stock Crítico");
+        System.out.println("6. Resumen de Ventas por Estado");
+        System.out.println("7. Ventas por Cliente Detallado");
+        System.out.println("8. Movimientos de Inventario");
+        System.out.println("9. Reporte de Ingresos Diarios");
+        System.out.println("10. Productos Sin Movimiento");
+        System.out.println("0. Volver al Menú Principal");
+        System.out.println("===========================================");
+        System.out.print("Seleccione una opción: ");
+        
+        opcion = leerEntero();
+        
+        switch (opcion) {
+            case 1:
+                reporteVentasPorPeriodo();
+                break;
+            case 2:  
+                break;
+            case 3: 
+                break;
+            case 4: 
+                break;
+            case 5:
+                reporteStockCritico();
+                break;
+            case 6: 
+                break;
+            case 7: 
+                break;
+            case 8: 
+                break;
+            case 9: 
+                break;
+            case 10: 
+                break;
+            case 0:
+                System.out.println("Volviendo al menú principal...");
+                break;
+            default:
+                System.out.println("Opción inválida. Intente nuevamente.");
+                break;
+        }
+        
+        if (opcion != 0) {
+            System.out.print("\nPresione Enter para continuar...");
+            scanner.nextLine();
+        }
+    } while (opcion != 0);
+}
+
+private static void reporteVentasPorPeriodo() {
+    try {
+        System.out.println("\n===========================================");
+        System.out.println("       REPORTE DE VENTAS POR PERÍODO");
+        System.out.println("===========================================");
+        
+        System.out.println("\nSeleccione el período:");
+        System.out.println("1. Hoy");
+        System.out.println("2. Esta semana");
+        System.out.println("3. Este mes");
+        System.out.println("4. Rango personalizado");
+        System.out.print("Opción: ");
+        
+        int periodo = leerEntero();
+        LocalDate fechaInicio = LocalDate.now();
+        LocalDate fechaFin = LocalDate.now();
+        
+        switch (periodo) {
+            case 1:
+                // Hoy
+                break;
+            case 2:
+                // Esta semana
+                fechaInicio = fechaInicio.minusDays(fechaInicio.getDayOfWeek().getValue() - 1);
+                break;
+            case 3:
+                // Este mes
+                fechaInicio = fechaInicio.withDayOfMonth(1);
+                break;
+            case 4:
+                // Rango personalizado
+                System.out.print("Fecha inicio (dd/mm/yyyy): ");
+                String fechaInicioStr = scanner.nextLine();
+                System.out.print("Fecha fin (dd/mm/yyyy): ");
+                String fechaFinStr = scanner.nextLine();
+                
+                try {
+                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    fechaInicio = LocalDate.parse(fechaInicioStr, formatter);
+                    fechaFin = LocalDate.parse(fechaFinStr, formatter);
+                } catch (Exception e) {
+                    System.err.println("✗ Formato de fecha inválido");
+                    return;
+                }
+                break;
+            default:
+                System.out.println("Opción inválida");
+                return;
+        }
+        
+        // Obtener todas las ventas y filtrar por período
+        List<VentaDTO> todasLasVentas = ventaService.listarVentas();
+        List<VentaDTO> ventasPeriodo = new ArrayList<>();
+        
+        for (VentaDTO venta : todasLasVentas) {
+            if (venta.getFecha() != null && 
+                !venta.getFecha().isBefore(fechaInicio) && 
+                !venta.getFecha().isAfter(fechaFin)) {
+                ventasPeriodo.add(venta);
+            }
+        }
+        
+        if (ventasPeriodo.isEmpty()) {
+            System.out.println("\nNo hay ventas en el período seleccionado.");
+            return;
+        }
+        
+        // Mostrar encabezado del reporte
+        System.out.println("\nPeríodo: " + fechaInicio.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) 
+                         + " al " + fechaFin.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        System.out.println(repetirCaracter("=", 90));
+        
+        mostrarTablaVentas(ventasPeriodo);
+        
+        // Calcular y mostrar totales
+        BigDecimal totalGeneral = BigDecimal.ZERO;
+        BigDecimal totalCompletadas = BigDecimal.ZERO;
+        BigDecimal totalCanceladas = BigDecimal.ZERO;
+        int ventasCompletadas = 0;
+        int ventasCanceladas = 0;
+        int ventasPendientes = 0;
+        
+        for (VentaDTO venta : ventasPeriodo) {
+            if (venta.isCompletada()) {
+                ventasCompletadas++;
+                totalCompletadas = totalCompletadas.add(venta.getTotal());
+                totalGeneral = totalGeneral.add(venta.getTotal());
+            } else if (venta.isCancelada()) {
+                ventasCanceladas++;
+                totalCanceladas = totalCanceladas.add(venta.getTotal());
+            } else if (venta.isPendiente()) {
+                ventasPendientes++;
+            }
+        }
+        
+        System.out.println("\n===========================================");
+        System.out.println("              RESUMEN DEL PERÍODO");
+        System.out.println("===========================================");
+        System.out.println("Total de ventas: " + ventasPeriodo.size());
+        System.out.println("├─ Completadas: " + ventasCompletadas + " (S/ " + totalCompletadas + ")");
+        System.out.println("├─ Pendientes: " + ventasPendientes);
+        System.out.println("└─ Canceladas: " + ventasCanceladas + " (S/ " + totalCanceladas + ")");
+        System.out.println("\nINGRESO TOTAL: S/ " + totalGeneral);
+        
+        if (ventasCompletadas > 0) {
+            BigDecimal promedioVenta = totalCompletadas.divide(BigDecimal.valueOf(ventasCompletadas), 2, BigDecimal.ROUND_HALF_UP);
+            System.out.println("Promedio por venta: S/ " + promedioVenta);
+        }
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error al generar reporte: " + e.getMessage());
     }
+}
+
+ 
+
+ 
+private static void reporteStockCritico() {
+    try {
+        System.out.println("\n===========================================");
+        System.out.println("      PRODUCTOS CON STOCK CRÍTICO");
+        System.out.println("===========================================");
+        
+        List<InventarioDTO> inventarios = inventarioService.listarInventarios();
+        List<InventarioDTO> stockCritico = new ArrayList<>();
+        List<InventarioDTO> stockBajo = new ArrayList<>();
+        List<InventarioDTO> stockAlto = new ArrayList<>();
+        
+        for (InventarioDTO inv : inventarios) {
+            if (inv.getCantidad() <= 5) {
+                stockCritico.add(inv);
+            } else if (inv.isStockBajo()) {
+                stockBajo.add(inv);
+            } else if (inv.isStockAlto()) {
+                stockAlto.add(inv);
+            }
+        }
+        
+        // Mostrar Stock Crítico (≤ 5 unidades)
+        if (!stockCritico.isEmpty()) {
+            System.out.println("\n🚨 STOCK CRÍTICO (≤ 5 unidades)");
+            System.out.println(repetirCaracter("=", 90));
+            mostrarTablaStockCritico(stockCritico);
+        }
+        
+        // Mostrar Stock Bajo
+        if (!stockBajo.isEmpty()) {
+            System.out.println("\n⚠️  STOCK BAJO (bajo el mínimo)");
+            System.out.println(repetirCaracter("=", 90));
+            mostrarTablaStockCritico(stockBajo);
+        }
+        
+        // Mostrar Stock Alto
+        if (!stockAlto.isEmpty()) {
+            System.out.println("\n⬆️  STOCK ALTO (sobre el máximo)");
+            System.out.println(repetirCaracter("=", 90));
+            mostrarTablaStockCritico(stockAlto);
+        }
+        
+        if (stockCritico.isEmpty() && stockBajo.isEmpty() && stockAlto.isEmpty()) {
+            System.out.println("\n✅ Todos los productos tienen niveles de stock normales.");
+        }
+        
+        // Resumen
+        System.out.println("\n===========================================");
+        System.out.println("                RESUMEN");
+        System.out.println("===========================================");
+        System.out.println("Productos con stock crítico: " + stockCritico.size());
+        System.out.println("Productos con stock bajo: " + stockBajo.size());
+        System.out.println("Productos con stock alto: " + stockAlto.size());
+        System.out.println("Total productos analizados: " + inventarios.size());
+        
+    } catch (Exception e) {
+        System.err.println("✗ Error al generar reporte: " + e.getMessage());
+    }
+}
+
+private static void mostrarTablaStockCritico(List<InventarioDTO> inventarios) {
+    System.out.printf("%-30s %-20s %-10s %-8s %-8s %-10s%n", 
+        "PRODUCTO", "ALMACÉN", "STOCK", "MÍNIMO", "MÁXIMO", "REPOSICIÓN");
+    System.out.println(repetirCaracter("-", 90));
     
+    for (InventarioDTO inv : inventarios) {
+        int reposicionSugerida = inv.getStockMaximo() - inv.getCantidad();
+        
+        System.out.printf("%-30s %-20s %-10d %-8d %-8d %-10d%n",
+            inv.getNombreProducto() != null && inv.getNombreProducto().length() > 29 ? 
+                inv.getNombreProducto().substring(0, 26) + "..." : 
+                inv.getNombreProducto(),
+            inv.getDescripcionAlmacen() != null && inv.getDescripcionAlmacen().length() > 19 ? 
+                inv.getDescripcionAlmacen().substring(0, 16) + "..." : 
+                inv.getDescripcionAlmacen(),
+            inv.getCantidad(),
+            inv.getStockMinimo(),
+            inv.getStockMaximo(),
+            reposicionSugerida
+        );
+    }
+}
+
+ 
     // ============================================
     // MÉTODOS AUXILIARES PARA LA INTERFAZ
     // ============================================

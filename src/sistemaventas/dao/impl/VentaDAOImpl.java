@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import sistemaventas.entity.Cliente;
 
 /**
  * Implementación del DAO para la gestión de ventas
@@ -49,7 +50,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public Optional<Venta> findById(Integer id) throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento " +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento, c.correo " +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "WHERE v.idVentas = ?";
@@ -70,7 +71,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public List<Venta> findAll() throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento " +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento, c.correo " +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "ORDER BY v.fecha DESC, v.idVentas DESC";
@@ -139,7 +140,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public List<Venta> findByCliente(Integer idCliente) throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento " +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento, c.correo " +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "WHERE v.idCliente = ? " +
@@ -163,7 +164,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public List<Venta> findByFecha(LocalDate fecha) throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento " +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento , c.correo" +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "WHERE v.fecha = ? " +
@@ -187,7 +188,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public List<Venta> findByFechaRange(LocalDate fechaInicio, LocalDate fechaFin) throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento " +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento, c.correo " +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "WHERE v.fecha BETWEEN ? AND ? " +
@@ -212,7 +213,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public List<Venta> findByEstado(Venta.EstadoVenta estado) throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento " +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento , c.correo" +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "WHERE v.estado = ? " +
@@ -250,7 +251,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public List<Venta> findVentasRecientes(int limite) throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento " +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento, c.correo " +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "ORDER BY v.fecha_registro DESC " +
@@ -320,6 +321,8 @@ public class VentaDAOImpl implements IVentaDAO {
         venta.setTotal(rs.getBigDecimal("total"));
         venta.setEstado(Venta.EstadoVenta.valueOf(rs.getString("estado")));
         
+        Cliente c =  new Cliente(rs.getString("cliente_nombre"), rs.getString("cliente_documento"),  rs.getString("correo"));
+        venta.setCliente(c);
         Timestamp timestamp = rs.getTimestamp("fecha_registro");
         if (timestamp != null) {
             venta.setFechaRegistro(timestamp.toLocalDateTime());
