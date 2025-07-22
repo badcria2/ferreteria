@@ -164,7 +164,7 @@ public class VentaDAOImpl implements IVentaDAO {
     
     @Override
     public List<Venta> findByFecha(LocalDate fecha) throws Exception {
-        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento , c.correo" +
+        String sql = "SELECT v.*, c.nombre as cliente_nombre, c.NroDocumento as cliente_documento , c.correo " +
                      "FROM Ventas v " +
                      "JOIN Clientes c ON v.idCliente = c.idCliente " +
                      "WHERE v.fecha = ? " +
